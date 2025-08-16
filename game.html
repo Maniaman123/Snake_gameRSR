@@ -26,31 +26,30 @@
         
         <!-- Mobile Touch Controls -->
         <div class="mobile-controls" id="mobileControls">
-            <div class="control-options">
-                <button id="toggleControlBtn" class="control-toggle">Ganti Kontrol</button>
+            <!-- Control Type Toggle -->
+            <div class="control-toggle">
+                <button id="toggleControlBtn">Ganti Kontrol</button>
             </div>
-            
-            <!-- Button Controls -->
-            <div class="button-controls" id="buttonControls">
-                <div class="control-row">
-                    <button class="control-btn" id="upBtn">↑</button>
-                </div>
-                <div class="control-row">
-                    <button class="control-btn" id="leftBtn">←</button>
-                    <button class="control-btn" id="downBtn">↓</button>
-                    <button class="control-btn" id="rightBtn">→</button>
-                </div>
-            </div>
-            
+
             <!-- D-Pad Controls -->
-            <div class="dpad-controls" id="dpadControls" style="display: none;">
-                <div class="dpad">
-                    <button class="dpad-btn dpad-up" id="dpadUp">▲</button>
-                    <div class="dpad-middle">
-                        <button class="dpad-btn dpad-left" id="dpadLeft">◄</button>
-                        <button class="dpad-btn dpad-right" id="dpadRight">►</button>
+            <div class="d-pad-controls" id="dpadControls">
+                <div class="d-pad">
+                    <button class="d-pad-btn up" id="upBtn">↑</button>
+                    <div class="d-pad-middle">
+                        <button class="d-pad-btn left" id="leftBtn">←</button>
+                        <button class="d-pad-btn right" id="rightBtn">→</button>
                     </div>
-                    <button class="dpad-btn dpad-down" id="dpadDown">▼</button>
+                    <button class="d-pad-btn down" id="downBtn">↓</button>
+                </div>
+            </div>
+
+            <!-- Swipe Controls -->
+            <div class="swipe-controls" id="swipeControls" style="display: none;">
+                <div class="swipe-area" id="swipeArea">
+                    <div class="swipe-indicator">
+                        <div class="swipe-arrow">↑</div>
+                        <div>Swipe untuk bergerak</div>
+                    </div>
                 </div>
             </div>
         </div>
