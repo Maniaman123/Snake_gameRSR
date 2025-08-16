@@ -1,676 +1,737 @@
-* {
-    user-select: none;
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
+// Game variables
+const canvas = document.getElementById('gameCanvas');
+const ctx = canvas.getContext('2d');
+const scoreElement = document.getElementById('score');
+const highScoreElement = document.getElementById('highScore');
+const obstacleCountElement = document.getElementById('obstacleCount');
+const startBtn = document.getElementById('startBtn');
+const pauseBtn = document.getElementById('pauseBtn');
+const resetBtn = document.getElementById('resetBtn');
+
+// Game over modal elements
+const gameOverModal = document.getElementById('gameOverModal');
+const finalScoreElement = document.getElementById('finalScore');
+const modalHighScoreElement = document.getElementById('modalHighScore');
+const playAgainBtn = document.getElementById('playAgainBtn');
+const closeModalBtn = document.getElementById('closeModalBtn');
+const gameOverSound = document.getElementById('gameOverSound');
+
+// Mobile control buttons
+const upBtn = document.getElementById('upBtn');
+const downBtn = document.getElementById('downBtn');
+const leftBtn = document.getElementById('leftBtn');
+const rightBtn = document.getElementById('rightBtn');
+const mobileControls = document.getElementById('mobileControls');
+
+// Game settings
+const gridSize = 20;
+const tileCount = canvas.width / gridSize;
+
+// Game state
+let snake = [];
+let food = {};
+let obstacles = [];
+let dx = 0;
+let dy = 0;
+let score = 0;
+let highScore = localStorage.getItem('snakeHighScore') || 0;
+let gameRunning = false;
+let gamePaused = false;
+let gameLoop;
+let obstacleCount = 0;
+let powerUp = null;
+let powerUpActive = false;
+let currentLevel = 1;
+let specialFood = null;
+let specialFoodTimer = null;
+
+// Initialize game
+function initGame() {
+    // Initialize snake at center with safe position
+    const centerX = Math.floor(tileCount / 2);
+    const centerY = Math.floor(tileCount / 2);
+    snake = [
+        {x: centerX, y: centerY}
+    ];
+    
+    // Initialize food and obstacles
+    obstacles = [];
+    obstacleCount = 0;
+    generateInitialObstacles();
+    generateFood();
+    
+    // Reset direction to right (safe starting direction)
+    dx = 1;
+    dy = 0;
+    
+    // Reset score
+    score = 0;
+    updateScore();
+    
+    // Update displays
+    highScoreElement.textContent = highScore;
+    obstacleCountElement.textContent = obstacleCount;
 }
 
-body {
-    font-family: 'Arial', sans-serif;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    min-height: 100vh;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    color: #333;
+// Generate food at random position
+function generateFood() {
+    let newFood;
+    let attempts = 0;
+    const maxAttempts = 100;
+    
+    do {
+        newFood = {
+            x: Math.floor(Math.random() * tileCount),
+            y: Math.floor(Math.random() * tileCount)
+        };
+        attempts++;
+        
+        if (attempts > maxAttempts) break;
+        
+    } while (isPositionOccupied(newFood.x, newFood.y));
+    
+    food = newFood;
 }
 
-.container {
-    text-align: center;
-    background: white;
-    padding: 30px;
-    border-radius: 20px;
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
-}
-
-h1 {
-    color: #667eea;
-    margin-bottom: 20px;
-    font-size: 2.5em;
-    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
-}
-
-.score-board {
-    display: flex;
-    justify-content: space-between;
-    margin-bottom: 20px;
-    font-size: 1.2em;
-    font-weight: bold;
-    flex-wrap: wrap;
-    gap: 10px;
-}
-
-.score,
-.high-score,
-.obstacles {
-    background: #f0f0f0;
-    padding: 10px 20px;
-    border-radius: 10px;
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-    flex: 1;
-    min-width: 120px;
-}
-
-#gameCanvas {
-    border: 3px solid #667eea;
-    border-radius: 10px;
-    background: #f9f9f9;
-    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
-}
-
-.countdown-overlay {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    background: rgba(102, 126, 234, 0.9);
-    color: white;
-    padding: 40px;
-    border-radius: 20px;
-    text-align: center;
-    z-index: 100;
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
-    backdrop-filter: blur(5px);
-    display: none;
-}
-
-.countdown-text {
-    font-size: 4em;
-    font-weight: bold;
-    margin-bottom: 10px;
-    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
-    animation: pulse 1s ease-in-out infinite;
-}
-
-.countdown-label {
-    font-size: 1.5em;
-    opacity: 0.9;
-}
-
-@keyframes pulse {
-    0% {
-        transform: scale(1);
+// Check if position is occupied by snake or obstacles
+function isPositionOccupied(x, y) {
+    // Check snake
+    for (let segment of snake) {
+        if (segment.x === x && segment.y === y) {
+            return true;
+        }
     }
-
-    50% {
-        transform: scale(1.1);
+    
+    // Check obstacles
+    for (let obstacle of obstacles) {
+        if (obstacle.x === x && obstacle.y === y) {
+            return true;
+        }
     }
-
-    100% {
-        transform: scale(1);
-    }
+    
+    return false;
 }
 
-.controls {
-    margin-top: 20px;
-}
-
-button {
-    background: #667eea;
-    color: white;
-    border: none;
-    padding: 12px 25px;
-    margin: 0 10px;
-    border-radius: 25px;
-    font-size: 1.1em;
-    cursor: pointer;
-    transition: all 0.3s ease;
-    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
-}
-
-button:hover {
-    background: #764ba2;
-    transform: translateY(-2px);
-    box-shadow: 0 6px 15px rgba(0, 0, 0, 0.3);
-}
-
-button:active {
-    transform: translateY(0);
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
-}
-
-button:disabled {
-    background: #ccc;
-    cursor: not-allowed;
-    transform: none;
-}
-
-.instructions {
-    margin-top: 20px;
-    font-size: 0.9em;
-    color: #666;
-    line-height: 1.6;
-}
-
-.instructions p {
-    margin: 5px 0;
-}
-
-/* Mobile Controls Styles */
-.mobile-controls {
-    display: none;
-    margin-top: 20px;
-}
-
-.d-pad-controls {
-    width: 180px;
-    height: 180px;
-    margin: 0 auto;
-    position: relative;
-}
-
-.d-pad {
-    width: 100%;
-    height: 100%;
-    position: relative;
-}
-
-.d-pad-btn {
-    position: absolute;
-    width: 60px;
-    height: 60px;
-    background: #667eea;
-    color: white;
-    border: none;
-    border-radius: 15px;
-    font-size: 24px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    box-shadow: 0 4px 8px rgba(0,0,0,0.2);
-    -webkit-tap-highlight-color: transparent;
-}
-
-.d-pad-btn:active {
-    transform: scale(0.95);
-    background: #5a54a4;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
-}
-
-.d-pad-btn.up {
-    top: 0;
-    left: 60px;
-}
-
-.d-pad-btn.down {
-    bottom: 0;
-    left: 60px;
-}
-
-.d-pad-btn.left {
-    left: 0;
-    top: 60px;
-}
-
-.d-pad-btn.right {
-    right: 0;
-    top: 60px;
-}
-
-.d-pad-middle {
-    position: absolute;
-    top: 60px;
-    left: 0;
-    width: 180px;
-    display: flex;
-    justify-content: space-between;
-}
-
-/* Touch Feedback Animation */
-@keyframes touchRipple {
-    0% {
-        transform: scale(1);
-        opacity: 0.4;
-    }
-    100% {
-        transform: scale(1.5);
-        opacity: 0;
+// Generate initial obstacles
+function generateInitialObstacles() {
+    const initialObstacleCount = 3;
+    for (let i = 0; i < initialObstacleCount; i++) {
+        generateObstacle();
     }
 }
 
-.touch-feedback {
-    position: fixed;
-    width: 40px;
-    height: 40px;
-    background: rgba(102, 126, 234, 0.6);
-    border-radius: 50%;
-    pointer-events: none;
-    animation: touchRipple 0.4s ease-out;
+// Generate new obstacle
+function generateObstacle() {
+    let newObstacle;
+    let attempts = 0;
+    const maxAttempts = 100;
+    
+    do {
+        newObstacle = {
+            x: Math.floor(Math.random() * tileCount),
+            y: Math.floor(Math.random() * tileCount)
+        };
+        attempts++;
+        
+        if (attempts > maxAttempts) break;
+        
+    } while (
+        isPositionOccupied(newObstacle.x, newObstacle.y) ||
+        (Math.abs(newObstacle.x - snake[0].x) < 3 && Math.abs(newObstacle.y - snake[0].y) < 3) ||
+        (newObstacle.x === food.x && newObstacle.y === food.y)
+    );
+    
+    obstacles.push(newObstacle);
+    obstacleCount = obstacles.length;
+    obstacleCountElement.textContent = obstacleCount;
 }
 
-/* Responsive Design */
-@media (max-width: 500px) {
-    .container {
-        padding: 20px;
-        margin: 10px;
-    }
-
-    h1 {
-        font-size: 2em;
-    }
-
-    #gameCanvas {
-        width: 300px;
-        height: 300px;
-    }
-
-    .score-board {
-        flex-direction: column;
-        gap: 10px;
-    }
-
-    .controls button {
-        margin: 5px;
-        padding: 10px 20px;
-        font-size: 1em;
-    }
-
-    .mobile-controls {
-        display: block;
-    }
-
-    .control-btn {
-        width: 50px;
-        height: 50px;
-        font-size: 20px;
-    }
+// Generate power-up at random position
+function generatePowerUp() {
+    if (powerUp) return;
+    
+    powerUp = {
+        x: Math.floor(Math.random() * tileCount),
+        y: Math.floor(Math.random() * tileCount),
+        type: Math.random() < 0.5 ? 'invincible' : 'speedBoost'
+    };
 }
 
-@media (max-width: 400px) {
-    .container {
-        padding: 15px;
-        margin: 5px;
-    }
-
-    #gameCanvas {
-        width: 280px;
-        height: 280px;
+// Activate power-up effect
+function activatePowerUp(type) {
+    powerUpActive = true;
+    if (type === 'invincible') {
+        // Implementasi invincible
+        setTimeout(() => {
+            powerUpActive = false;
+        }, 5000);
+    } else if (type === 'speedBoost') {
+        // Implementasi speed boost
+        clearInterval(gameLoop);
+        gameLoop = setInterval(gameStep, 75);
+        setTimeout(() => {
+            clearInterval(gameLoop);
+            gameLoop = setInterval(gameStep, 150);
+            powerUpActive = false;
+        }, 3000);
     }
 }
 
-/* Game Over Modal Styles */
-.game-over-modal {
-    display: none;
-    position: fixed;
-    z-index: 1000;
-    left: 0;
-    top: 0;
-    width: 100%;
-    height: 100%;
-    background-color: rgba(0, 0, 0, 0.8);
-    backdrop-filter: blur(5px);
-    animation: fadeIn 0.3s ease-in-out;
+// Generate special food at random position
+function generateSpecialFood() {
+    if (specialFood) return;
+    
+    specialFood = {
+        x: Math.floor(Math.random() * tileCount),
+        y: Math.floor(Math.random() * tileCount),
+        value: 50
+    };
+    
+    // Hilangkan makanan spesial setelah 5 detik
+    specialFoodTimer = setTimeout(() => {
+        specialFood = null;
+    }, 5000);
 }
 
-@keyframes fadeIn {
-    from {
-        opacity: 0;
+// Draw game elements
+function drawGame() {
+    // Clear canvas
+    ctx.fillStyle = '#f9f9f9';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    
+    // Draw snake
+    ctx.fillStyle = '#4CAF50';
+    for (let i = 0; i < snake.length; i++) {
+        ctx.fillRect(snake[i].x * gridSize, snake[i].y * gridSize, gridSize - 2, gridSize - 2);
+        
+        // Draw eyes on head
+        if (i === 0) {
+            ctx.fillStyle = '#2E7D32';
+            ctx.fillRect(snake[i].x * gridSize + 4, snake[i].y * gridSize + 4, 4, 4);
+            ctx.fillRect(snake[i].x * gridSize + 12, snake[i].y * gridSize + 4, 4, 4);
+            ctx.fillStyle = '#4CAF50';
+        }
     }
-
-    to {
-        opacity: 1;
+    
+    // Draw food
+    ctx.fillStyle = '#FF5722';
+    ctx.fillRect(food.x * gridSize, food.y * gridSize, gridSize - 2, gridSize - 2);
+    
+    // Add food shine effect
+    ctx.fillStyle = '#FF8A65';
+    ctx.fillRect(food.x * gridSize + 3, food.y * gridSize + 3, 4, 4);
+    
+    // Draw obstacles
+    ctx.fillStyle = '#757575';
+    for (let obstacle of obstacles) {
+        ctx.fillRect(obstacle.x * gridSize, obstacle.y * gridSize, gridSize - 2, gridSize - 2);
+        
+        // Add obstacle detail
+        ctx.fillStyle = '#9E9E9E';
+        ctx.fillRect(obstacle.x * gridSize + 2, obstacle.y * gridSize + 2, gridSize - 6, gridSize - 6);
+        ctx.fillStyle = '#757575';
     }
-}
-
-.modal-content {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    color: white;
-    margin: 15% auto;
-    padding: 40px;
-    border-radius: 20px;
-    width: 90%;
-    max-width: 400px;
-    text-align: center;
-    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
-    animation: slideIn 0.3s ease-out;
-}
-
-@keyframes slideIn {
-    from {
-        transform: translateY(-50px) scale(0.9);
-        opacity: 0;
+    
+    // Draw power-up if available
+    if (powerUp) {
+        ctx.fillStyle = powerUp.type === 'invincible' ? '#FFD600' : '#00BCD4';
+        ctx.fillRect(powerUp.x * gridSize, powerUp.y * gridSize, gridSize - 2, gridSize - 2);
     }
-
-    to {
-        transform: translateY(0) scale(1);
-        opacity: 1;
-    }
-}
-
-.modal-content h2 {
-    font-size: 2.5em;
-    margin-bottom: 20px;
-    color: #fff;
-    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
-}
-
-.game-over-details {
-    margin: 20px 0;
-}
-
-.game-over-details p {
-    font-size: 1.3em;
-    margin: 10px 0;
-    color: #fff;
-}
-
-.modal-buttons {
-    display: flex;
-    justify-content: center;
-    gap: 20px;
-    margin-top: 30px;
-    flex-wrap: wrap;
-}
-
-.modal-btn {
-    padding: 15px 30px;
-    font-size: 1.2em;
-    border: none;
-    border-radius: 25px;
-    cursor: pointer;
-    transition: all 0.3s ease;
-    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
-}
-
-.modal-btn.primary {
-    background: #4CAF50;
-    color: white;
-}
-
-.modal-btn.primary:hover {
-    background: #45a049;
-    transform: translateY(-2px);
-    box-shadow: 0 6px 15px rgba(0, 0, 0, 0.3);
-}
-
-.modal-btn.secondary {
-    background: #f44336;
-    color: white;
-}
-
-.modal-btn.secondary:hover {
-    background: #da190b;
-    transform: translateY(-2px);
-    box-shadow: 0 6px 15px rgba(0, 0, 0, 0.3);
-}
-
-.modal-btn:active {
-    transform: translateY(0);
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
-}
-
-/* Responsive modal for mobile */
-@media (max-width: 500px) {
-    .modal-content {
-        margin: 20% auto;
-        padding: 30px 20px;
-        width: 95%;
-    }
-
-    .modal-content h2 {
-        font-size: 2em;
-    }
-
-    .game-over-details p {
-        font-size: 1.1em;
-    }
-
-    .modal-buttons {
-        flex-direction: column;
-        gap: 15px;
-    }
-
-    .modal-btn {
-        width: 100%;
-        max-width: 200px;
+    
+    // Draw special food
+    if (specialFood) {
+        ctx.fillStyle = '#FFD700'; // Gold color
+        ctx.fillRect(specialFood.x * gridSize, specialFood.y * gridSize, gridSize - 2, gridSize - 2);
     }
 }
 
-/* Audio Controls */
-.audio-controls {
-    margin-top: 30px;
-    padding: 20px;
-    background: #f8f9fa;
-    border-radius: 15px;
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-}
-
-.audio-controls h3 {
-    color: #667eea;
-    margin-bottom: 15px;
-    font-size: 1.3em;
-}
-
-.audio-settings {
-    display: flex;
-    flex-direction: column;
-    gap: 15px;
-    align-items: center;
-}
-
-.volume-control {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    font-weight: bold;
-}
-
-.volume-control label {
-    color: #333;
-    min-width: 60px;
-}
-
-#volumeSlider {
-    width: 150px;
-    height: 5px;
-    background: #ddd;
-    border-radius: 5px;
-    outline: none;
-    cursor: pointer;
-}
-
-#volumeSlider::-webkit-slider-thumb {
-    -webkit-appearance: none;
-    appearance: none;
-    width: 20px;
-    height: 20px;
-    background: #667eea;
-    border-radius: 50%;
-    cursor: pointer;
-}
-
-#volumeSlider::-moz-range-thumb {
-    width: 20px;
-    height: 20px;
-    background: #667eea;
-    border-radius: 50%;
-    cursor: pointer;
-    border: none;
-}
-
-#volumeValue {
-    min-width: 40px;
-    color: #667eea;
-    font-weight: bold;
-}
-
-.audio-toggles {
-    display: flex;
-    gap: 20px;
-    flex-wrap: wrap;
-    justify-content: center;
-}
-
-.toggle-label {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    cursor: pointer;
-    font-size: 0.9em;
-    color: #333;
-}
-
-.toggle-label input[type="checkbox"] {
-    display: none;
-}
-
-.toggle-label .slider {
-    position: relative;
-    width: 50px;
-    height: 25px;
-    background: #ccc;
-    border-radius: 25px;
-    transition: 0.3s;
-}
-
-.toggle-label .slider:before {
-    content: "";
-    position: absolute;
-    width: 20px;
-    height: 20px;
-    background: white;
-    border-radius: 50%;
-    top: 2.5px;
-    left: 2.5px;
-    transition: 0.3s;
-}
-
-.toggle-label input[type="checkbox"]:checked+.slider {
-    background: #667eea;
-}
-
-.toggle-label input[type="checkbox"]:checked+.slider:before {
-    transform: translateX(25px);
-}
-
-.mute-button {
-    background: #667eea;
-    color: white;
-    border: none;
-    padding: 10px 15px;
-    border-radius: 50%;
-    font-size: 1.5em;
-    cursor: pointer;
-    transition: all 0.3s ease;
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
-}
-
-.mute-button:hover {
-    background: #764ba2;
-    transform: scale(1.1);
-}
-
-.mute-button.muted {
-    background: #f44336;
-}
-
-/* Responsive audio controls */
-@media (max-width: 500px) {
-    .audio-controls {
-        margin-top: 20px;
-        padding: 15px;
+// Update game state
+function updateGame() {
+    if (gamePaused) return;
+    
+    // Calculate new head position
+    const head = {x: snake[0].x + dx, y: snake[0].y + dy};
+    
+    // Check wall collision
+    if (head.x < 0 || head.x >= tileCount || head.y < 0 || head.y >= tileCount) {
+        gameOver();
+        return;
     }
-
-    .audio-settings {
-        gap: 10px;
+    
+    // Check self collision
+    for (let segment of snake) {
+        if (head.x === segment.x && head.y === segment.y) {
+            gameOver();
+            return;
+        }
     }
-
-    .volume-control {
-        flex-direction: column;
-        gap: 5px;
+    
+    // Check obstacle collision
+    for (let obstacle of obstacles) {
+        if (head.x === obstacle.x && head.y === obstacle.y) {
+            gameOver();
+            return;
+        }
     }
-
-    #volumeSlider {
-        width: 120px;
+    
+    // Add new head
+    snake.unshift(head);
+    
+    // Check food collision
+    if (head.x === food.x && head.y === food.y) {
+        const bonus = calculateBonus();
+        score += 10 + bonus;
+        updateScore();
+        generateFood();
+        
+        // Add new obstacle every 50 points
+        if (score % 50 === 0 && score > 0) {
+            generateObstacle();
+        }
+        
+        // Generate power-up every 100 points
+        if (score % 100 === 0 && score > 0) {
+            generatePowerUp();
+        }
+        
+        // Increase speed slightly
+        if (score % 30 === 0 && score > 0) {
+            clearInterval(gameLoop);
+            gameLoop = setInterval(gameStep, Math.max(50, 150 - score / 5));
+        }
+    } else {
+        // Remove tail if no food eaten
+        snake.pop();
     }
+    
+    // Check power-up collision
+    if (powerUp && head.x === powerUp.x && head.y === powerUp.y) {
+        const powerUpType = powerUp.type;
+        powerUp = null; // Remove power-up after collection
+        activatePowerUp(powerUpType);
+    }
+    
+    // Check special food collision
+    if (specialFood && head.x === specialFood.x && head.y === specialFood.y) {
+        score += specialFood.value;
+        clearTimeout(specialFoodTimer);
+        specialFood = null;
+        updateScore();
+    }
+    
+    updateLevel();
+}
 
-    .audio-toggles {
-        flex-direction: column;
-        gap: 10px;
+// Game step
+function gameStep() {
+    updateGame();
+    drawGame();
+}
+
+// Update score display
+function updateScore() {
+    scoreElement.textContent = score;
+    if (score > highScore) {
+        highScore = score;
+        highScoreElement.textContent = highScore;
+        localStorage.setItem('snakeHighScore', highScore);
     }
 }
 
-/* Add after existing mobile controls styles */
-.control-toggle {
-    text-align: center;
-    margin-bottom: 15px;
+// Update level based on score
+function updateLevel() {
+    const newLevel = Math.floor(score / 100) + 1;
+    if (newLevel !== currentLevel) {
+        currentLevel = newLevel;
+        // Tambah rintangan setiap naik level
+        generateObstacle();
+        // Tingkatkan kecepatan
+        clearInterval(gameLoop);
+        gameLoop = setInterval(gameStep, Math.max(50, 150 - (currentLevel * 10)));
+    }
 }
 
-.control-toggle button {
-    background: #667eea;
-    color: white;
-    padding: 8px 16px;
-    border: none;
-    border-radius: 20px;
-    font-size: 14px;
-    cursor: pointer;
-    transition: all 0.3s ease;
+// Game over
+function gameOver() {
+    gameRunning = false;
+    clearInterval(gameLoop);
+    
+    // Stop background music
+    if (typeof musicManager !== 'undefined') {
+        musicManager.pause();
+    }
+    
+    // Play game over sound
+    try {
+        gameOverSound.play().catch(e => console.log('Audio play failed:', e));
+    } catch (e) {
+        console.log('Audio not supported');
+    }
+    
+    // Update modal content
+    finalScoreElement.textContent = score;
+    modalHighScoreElement.textContent = highScore;
+    
+    // Show game over modal
+    gameOverModal.style.display = 'block';
+    
+    // Update buttons
+    startBtn.style.display = 'inline-block';
+    pauseBtn.style.display = 'none';
 }
 
-.control-toggle button:hover {
-    background: #5a54a4;
+// Hide game over modal
+function hideGameOverModal() {
+    gameOverModal.style.display = 'none';
 }
 
-/* Swipe Controls */
-.swipe-controls {
-    width: 240px;
-    height: 240px;
-    margin: 0 auto;
-    position: relative;
+// Play again function
+function playAgain() {
+    hideGameOverModal();
+    resetGame();
+    startGame();
 }
 
-.swipe-area {
-    width: 100%;
-    height: 100%;
-    background: rgba(102, 126, 234, 0.1);
-    border: 2px dashed #667eea;
-    border-radius: 20px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    touch-action: none;
+// Start game
+function startGame() {
+    if (!gameRunning) {
+        initGame();
+        gameRunning = true;
+        gamePaused = false;
+
+        // Show countdown overlay
+        const countdownOverlay = document.getElementById('countdownOverlay');
+        const countdownNumber = document.getElementById('countdownNumber');
+        countdownOverlay.style.display = 'block';
+        
+        let count = 3;
+        countdownNumber.textContent = count;
+        
+        // Play background music immediately when countdown starts
+        if (typeof musicManager !== 'undefined') {
+            musicManager.play();
+        }
+        
+        const countdownInterval = setInterval(() => {
+            count--;
+            if (count > 0) {
+                countdownNumber.textContent = count;
+            } else {
+                clearInterval(countdownInterval);
+                countdownOverlay.style.display = 'none';
+                
+                // Start the actual game
+                gameLoop = setInterval(gameStep, 150);
+            }
+        }, 1000);
+        
+        // Update buttons
+        startBtn.style.display = 'none';
+        pauseBtn.style.display = 'inline-block';
+    } else if (gamePaused) {
+        gamePaused = false;
+        pauseBtn.textContent = 'Pause';
+        
+        // Resume background music
+        if (typeof musicManager !== 'undefined') {
+            musicManager.play();
+        }
+    }
 }
 
-.swipe-indicator {
-    text-align: center;
-    color: #667eea;
-    font-size: 14px;
+// Pause game
+function pauseGame() {
+    if (gameRunning) {
+        gamePaused = !gamePaused;
+        pauseBtn.textContent = gamePaused ? 'Resume' : 'Pause';
+        
+        // Sync background music with game state
+        if (typeof musicManager !== 'undefined') {
+            if (gamePaused) {
+                musicManager.pause();
+            } else {
+                musicManager.play();
+            }
+        }
+    }
 }
 
-.swipe-arrow {
-    font-size: 24px;
-    margin-bottom: 10px;
-    animation: bounce 1s infinite;
+// Reset game
+function resetGame() {
+    gameRunning = false;
+    gamePaused = false;
+    clearInterval(gameLoop);
+    
+    // Stop background music
+    if (typeof musicManager !== 'undefined') {
+        musicManager.stop();
+    }
+    
+    initGame();
+    drawGame();
+    
+    // Update buttons
+    startBtn.style.display = 'inline-block';
+    pauseBtn.style.display = 'none';
+    pauseBtn.textContent = 'Pause';
 }
 
-@keyframes bounce {
-    0%, 100% { transform: translateY(0); }
-    50% { transform: translateY(-10px); }
+// Handle keyboard input
+function handleKeyPress(e) {
+    if (!gameRunning && e.key !== ' ') return;
+    
+    const key = e.key.toLowerCase();
+    
+    // Handle spacebar for pause/resume
+    if (key === ' ') {
+        e.preventDefault();
+        if (gameRunning) {
+            pauseGame();
+        } else if (!gameRunning && score > 0) {
+            startGame();
+        }
+        return;
+    }
+    
+    if (!gameRunning || gamePaused) return;
+    
+    // Prevent reverse direction
+    switch(key) {
+        case 'arrowup':
+        case 'w':
+            if (dy !== 1) {
+                dx = 0;
+                dy = -1;
+            }
+            break;
+        case 'arrowdown':
+        case 's':
+            if (dy !== -1) {
+                dx = 0;
+                dy = 1;
+            }
+            break;
+        case 'arrowleft':
+        case 'a':
+            if (dx !== 1) {
+                dx = -1;
+                dy = 0;
+            }
+            break;
+        case 'arrowright':
+        case 'd':
+            if (dx !== -1) {
+                dx = 1;
+                dy = 0;
+            }
+            break;
+    }
 }
 
-/* Swipe Direction Indicator */
-.swipe-direction {
-    position: absolute;
-    background: rgba(102, 126, 234, 0.2);
-    border-radius: 10px;
-    pointer-events: none;
-    transition: opacity 0.3s ease;
-}
+// Handle mobile touch controls
+function handleMobileControls() {
+    let currentControlType = 'dpad'; // 'dpad' or 'swipe'
+    const dpadControls = document.getElementById('dpadControls');
+    const swipeControls = document.getElementById('swipeControls');
+    const toggleControlBtn = document.getElementById('toggleControlBtn');
 
-.swipe-direction.active {
-    background: rgba(102, 126, 234, 0.4);
-}
+    // Toggle between control types
+    toggleControlBtn.addEventListener('click', () => {
+        currentControlType = currentControlType === 'dpad' ? 'swipe' : 'dpad';
+        updateControlsDisplay();
+        toggleControlBtn.textContent = `Ganti ke ${currentControlType === 'dpad' ? 'Swipe' : 'D-Pad'}`;
+    });
 
-@keyframes fadeUp {
-    from {
-        opacity: 1;
-        transform: translateY(0);
+    function updateControlsDisplay() {
+        dpadControls.style.display = currentControlType === 'dpad' ? 'block' : 'none';
+        swipeControls.style.display = currentControlType === 'swipe' ? 'block' : 'none';
     }
 
-    to {
-        opacity: 0;
-        transform: translateY(-20px);
+    // D-Pad Controls
+    function handleDpadControls() {
+        const buttons = {
+            up: document.getElementById('upBtn'),
+            down: document.getElementById('downBtn'),
+            left: document.getElementById('leftBtn'),
+            right: document.getElementById('rightBtn')
+        };
+
+        Object.entries(buttons).forEach(([direction, button]) => {
+            button.addEventListener('touchstart', (e) => {
+                e.preventDefault();
+                button.style.transform = 'scale(0.95)';
+                button.style.background = '#5a54a4';
+                
+                changeDirection(direction);
+                showTouchFeedback(e.touches[0]);
+            });
+
+            button.addEventListener('touchend', (e) => {
+                e.preventDefault();
+                button.style.transform = 'scale(1)';
+                button.style.background = '#667eea';
+            });
+        });
     }
+
+    // Swipe Controls
+    function handleSwipeControls() {
+        const swipeArea = document.getElementById('swipeArea');
+        let startX, startY, moveX, moveY;
+        const minSwipeDistance = 30;
+
+        swipeArea.addEventListener('touchstart', (e) => {
+            startX = e.touches[0].clientX;
+            startY = e.touches[0].clientY;
+        });
+
+        swipeArea.addEventListener('touchmove', (e) => {
+            e.preventDefault();
+            moveX = e.touches[0].clientX;
+            moveY = e.touches[0].clientY;
+
+            const deltaX = moveX - startX;
+            const deltaY = moveY - startY;
+
+            if (Math.abs(deltaX) > minSwipeDistance || Math.abs(deltaY) > minSwipeDistance) {
+                if (Math.abs(deltaX) > Math.abs(deltaY)) {
+                    // Horizontal swipe
+                    changeDirection(deltaX > 0 ? 'right' : 'left');
+                } else {
+                    // Vertical swipe
+                    changeDirection(deltaY > 0 ? 'down' : 'up');
+                }
+                
+                // Reset start position for continuous swipe
+                startX = moveX;
+                startY = moveY;
+            }
+        });
+
+        swipeArea.addEventListener('touchend', () => {
+            startX = startY = moveX = moveY = null;
+        });
+    }
+
+    // Common direction change function
+    function changeDirection(direction) {
+        if (!gameRunning || gamePaused) return;
+
+        switch(direction) {
+            case 'up':
+                if (dy !== 1) { dx = 0; dy = -1; }
+                break;
+            case 'down':
+                if (dy !== -1) { dx = 0; dy = 1; }
+                break;
+            case 'left':
+                if (dx !== 1) { dx = -1; dy = 0; }
+                break;
+            case 'right':
+                if (dx !== -1) { dx = 1; dy = 0; }
+                break;
+        }
+    }
+
+    // Touch feedback animation
+    function showTouchFeedback(touch) {
+        const feedback = document.createElement('div');
+        feedback.className = 'touch-feedback';
+        feedback.style.left = `${touch.clientX - 20}px`;
+        feedback.style.top = `${touch.clientY - 20}px`;
+        document.body.appendChild(feedback);
+        
+        setTimeout(() => {
+            document.body.removeChild(feedback);
+        }, 400);
+    }
+
+    // Initialize both control types
+    handleDpadControls();
+    handleSwipeControls();
+    updateControlsDisplay();
+}
+
+// Initialize mobile controls
+function initMobileControls() {
+    const mobileControls = document.getElementById('mobileControls');
+    if (isMobileDevice()) {
+        mobileControls.style.display = 'block';
+        handleMobileControls();
+    } else {
+        mobileControls.style.display = 'none';
+    }
+}
+
+// Check if device is mobile
+function isMobileDevice() {
+    return (window.innerWidth <= 500) || 
+           ('ontouchstart' in window) ||
+           (navigator.maxTouchPoints > 0) ||
+           (navigator.msMaxTouchPoints > 0);
+}
+
+// Event listeners
+startBtn.addEventListener('click', startGame);
+pauseBtn.addEventListener('click', pauseGame);
+resetBtn.addEventListener('click', resetGame);
+playAgainBtn.addEventListener('click', playAgain);
+closeModalBtn.addEventListener('click', hideGameOverModal);
+document.addEventListener('keydown', handleKeyPress);
+
+// Close modal when clicking outside
+gameOverModal.addEventListener('click', function(e) {
+    if (e.target === gameOverModal) {
+        hideGameOverModal();
+    }
+});
+
+// Prevent arrow keys from scrolling the page
+window.addEventListener('keydown', function(e) {
+    if(['ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].indexOf(e.key) > -1) {
+        e.preventDefault();
+    }
+});
+
+// Handle window resize
+window.addEventListener('resize', initMobileControls);
+
+// Initialize
+initGame();
+drawGame();
+handleMobileControls();
+initMobileControls();
+
+// Auto start game when page loads
+window.addEventListener('load', function() {
+    setTimeout(startGame, 500); // Delay 500ms untuk memastikan semua elemen ter-load
+});
+
+// Tambahkan di script.js
+function showScoreAnimation(x, y, points) {
+    const scoreText = document.createElement('div');
+    scoreText.textContent = `+${points}`;
+    scoreText.style.position = 'absolute';
+    scoreText.style.left = `${x}px`;
+    scoreText.style.top = `${y}px`;
+    scoreText.style.color = '#4CAF50';
+    scoreText.style.fontSize = '20px';
+    scoreText.style.fontWeight = 'bold';
+    scoreText.style.animation = 'fadeUp 1s ease-out';
+    
+    document.body.appendChild(scoreText);
+    setTimeout(() => {
+        document.body.removeChild(scoreText);
+    }, 1000);
+}
+
+// Tambahkan di script.js setelah fungsi updateGame()
+function calculateBonus() {
+    // Bonus berdasarkan panjang ular
+    let lengthBonus = Math.floor(snake.length / 5) * 5;
+    
+    // Bonus berdasarkan kecepatan
+    let speedBonus = Math.floor((150 - gameLoop) / 10);
+    
+    return lengthBonus + speedBonus;
 }
