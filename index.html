@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Game Ular</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <h1>Game Ular</h1>
+        <div class="score-board">
+            <div class="score">Skor: <span id="score">0</span></div>
+            <div class="high-score">Skor Tertinggi: <span id="highScore">0</span></div>
+            <div class="obstacles">Rintangan: <span id="obstacleCount">0</span></div>
+        </div>
+        <canvas id="gameCanvas" width="400" height="400"></canvas>
+        
+        <!-- Countdown Overlay -->
+        <div id="countdownOverlay" class="countdown-overlay">
+            <div class="countdown-text">
+                <span id="countdownNumber">3</span>
+            </div>
+            <div class="countdown-label">Mulai dalam...</div>
+        </div>
+        
+        <!-- Mobile Touch Controls -->
+        <div class="mobile-controls" id="mobileControls">
+            <div class="control-row">
+                <button class="control-btn" id="upBtn">↑</button>
+            </div>
+            <div class="control-row">
+                <button class="control-btn" id="leftBtn">←</button>
+                <button class="control-btn" id="downBtn">↓</button>
+                <button class="control-btn" id="rightBtn">→</button>
+            </div>
+        </div>
+        
+        <div class="controls">
+            <button id="startBtn">Mulai Game</button>
+            <button id="pauseBtn" style="display: none;">Pause</button>
+            <button id="resetBtn">Reset</button>
+        </div>
+        
+        <!-- Audio controls removed - auto-run enabled -->
+        <div class="game-links">
+            <a href="instructions.html" class="instructions-link">📖 Lihat Petunjuk Game</a>
+        </div>
+    </div>
+
+    <!-- Game Over Modal -->
+    <div id="gameOverModal" class="game-over-modal">
+        <div class="modal-content">
+            <h2>Game Over!</h2>
+            <div class="game-over-details">
+                <p>Skor Akhir: <span id="finalScore">0</span></p>
+                <p>Skor Tertinggi: <span id="modalHighScore">0</span></p>
+            </div>
+            <div class="modal-buttons">
+                <button id="playAgainBtn" class="modal-btn primary">Main Lagi</button>
+                <button id="closeModalBtn" class="modal-btn secondary">Tutup</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Audio for game over sound -->
+    <audio id="gameOverSound" preload="auto">
+        <source src="music/game over.mp3" type="audio/wav">
+    </audio>
+    <script src="background-music.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>

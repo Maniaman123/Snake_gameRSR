@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Petunjuk Game Ular</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+
+        * {
+            user-select: none;
+        }
+
+        .instructions-container {
+            max-width: 600px;
+            margin: 50px auto;
+            padding: 20px;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        
+        .instructions-container h1 {
+            color: #4CAF50;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        .instruction-section {
+            margin-bottom: 25px;
+            padding: 15px;
+            background: #f9f9f9;
+            border-radius: 8px;
+            border-left: 4px solid #4CAF50;
+        }
+        
+        .instruction-section h3 {
+            color: #333;
+            margin-bottom: 10px;
+        }
+        
+        .instruction-section p {
+            margin: 5px 0;
+            color: #666;
+            line-height: 1.6;
+        }
+        
+        .control-key {
+            display: inline-block;
+            padding: 5px 10px;
+            background: #4CAF50;
+            color: white;
+            border-radius: 4px;
+            margin: 2px;
+            font-weight: bold;
+        }
+        
+        .start-game-btn {
+            display: block;
+            width: 200px;
+            margin: 30px auto;
+            padding: 15px;
+            background: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            font-size: 18px;
+            cursor: pointer;
+            text-decoration: none;
+            text-align: center;
+        }
+        
+        .start-game-btn:hover {
+            background: #45a049;
+        }
+    </style>
+</head>
+<body>
+    <div class="instructions-container">
+        <h1>🐍 Petunjuk Game Ular</h1>
+        
+        <div class="instruction-section">
+            <h3>🎯 Tujuan Game</h3>
+            <p>Kendalikan ular untuk memakan makanan merah dan dapatkan skor tertinggi!</p>
+            <p>Hindari rintangan abu-abu dan tubuh ular sendiri agar tidak game over.</p>
+        </div>
+        
+        <div class="instruction-section">
+            <h3>🎮 Kontrol Game</h3>
+            <p><strong>Laptop/Komputer:</strong></p>
+            <p><span class="control-key">↑</span> <span class="control-key">↓</span> <span class="control-key">←</span> <span class="control-key">→</span> - Tombol panah</p>
+            <p><span class="control-key">W</span> <span class="control-key">A</span> <span class="control-key">S</span> <span class="control-key">D</span> - Tombol WASD</p>
+            <p><span class="control-key">Space</span> - Pause/Resume game</p>
+            
+            <p><strong>HP/Tablet:</strong></p>
+            <p>Gunakan tombol arah yang muncul di bawah layar game</p>
+        </div>
+        
+        <div class="instruction-section">
+            <h3>⚠️ Hal yang Harus Dihindari</h3>
+            <p>• <strong>Rintangan abu-abu:</strong> Jangan sampai ular menyentuh rintangan</p>
+            <p>• <strong>Tubuh sendiri:</strong> Jangan sampai ular menabrak tubuhnya sendiri</p>
+            <p>• <strong>Tembok:</strong> Jangan sampai ular keluar dari batas area</p>
+        </div>
+        
+        <div class="instruction-section">
+            <h3>⭐ Tips Bermain</h3>
+            <p>• Setiap makanan yang dimakan akan menambah 10 poin</p>
+            <p>• Setiap 50 poin akan muncul rintangan baru</p>
+            <p>• Kecepatan ular akan meningkat setiap 30 poin</p>
+            <p>• Skor tertinggi akan otomatis tersimpan di browser</p>
+        </div>
+        
+        <a href="index.html" class="start-game-btn">Mulai Bermain!</a>
+        <footer>
+            &copy;  Copyright 2025 Maniaman. All rights reserved.
+        </footer>
+    </div>
+</body>
+</html>
