@@ -146,88 +146,101 @@ button:disabled {
     margin: 5px 0;
 }
 
-/* Mobile Touch Controls */
+/* Mobile Controls Styles */
 .mobile-controls {
     display: none;
     margin-top: 20px;
-    text-align: center;
 }
 
-.control-options {
-    margin-bottom: 15px;
+.d-pad-controls {
+    width: 180px;
+    height: 180px;
+    margin: 0 auto;
+    position: relative;
 }
 
-.control-toggle {
-    background: #FF9800;
-    color: white;
-    padding: 8px 16px;
-    font-size: 0.9em;
-    border-radius: 20px;
+.d-pad {
+    width: 100%;
+    height: 100%;
+    position: relative;
 }
 
-.control-toggle:hover {
-    background: #F57C00;
-}
-
-.control-row {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    gap: 10px;
-    margin: 5px 0;
-}
-
-.control-btn {
+.d-pad-btn {
+    position: absolute;
     width: 60px;
     height: 60px;
-    font-size: 24px;
-    font-weight: bold;
-    border-radius: 50%;
     background: #667eea;
     color: white;
     border: none;
+    border-radius: 15px;
+    font-size: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     cursor: pointer;
-    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
-    transition: all 0.3s ease;
-    user-select: none;
-    -webkit-user-select: none;
+    transition: all 0.2s ease;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.2);
     -webkit-tap-highlight-color: transparent;
 }
 
-.control-btn:hover {
-    background: #764ba2;
-    transform: translateY(-2px);
-}
-
-.control-btn:active {
-    transform: translateY(0);
+.d-pad-btn:active {
+    transform: scale(0.95);
     background: #5a54a4;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
 }
 
-/* Touch Feedback */
-.touch-feedback {
+.d-pad-btn.up {
+    top: 0;
+    left: 60px;
+}
+
+.d-pad-btn.down {
+    bottom: 0;
+    left: 60px;
+}
+
+.d-pad-btn.left {
+    left: 0;
+    top: 60px;
+}
+
+.d-pad-btn.right {
+    right: 0;
+    top: 60px;
+}
+
+.d-pad-middle {
     position: absolute;
-    width: 40px;
-    height: 40px;
-    background: rgba(102, 126, 234, 0.5);
-    border-radius: 50%;
-    pointer-events: none;
-    animation: touchRipple 0.6s ease-out;
-    z-index: 1000;
+    top: 60px;
+    left: 0;
+    width: 180px;
+    display: flex;
+    justify-content: space-between;
 }
 
+/* Touch Feedback Animation */
 @keyframes touchRipple {
     0% {
-        transform: scale(0);
-        opacity: 1;
+        transform: scale(1);
+        opacity: 0.4;
     }
     100% {
-        transform: scale(2);
+        transform: scale(1.5);
         opacity: 0;
     }
 }
 
-/* Show mobile controls on small screens */
+.touch-feedback {
+    position: fixed;
+    width: 40px;
+    height: 40px;
+    background: rgba(102, 126, 234, 0.6);
+    border-radius: 50%;
+    pointer-events: none;
+    animation: touchRipple 0.4s ease-out;
+}
+
+/* Responsive Design */
 @media (max-width: 500px) {
     .container {
         padding: 20px;
@@ -577,6 +590,77 @@ button:disabled {
         flex-direction: column;
         gap: 10px;
     }
+}
+
+/* Add after existing mobile controls styles */
+.control-toggle {
+    text-align: center;
+    margin-bottom: 15px;
+}
+
+.control-toggle button {
+    background: #667eea;
+    color: white;
+    padding: 8px 16px;
+    border: none;
+    border-radius: 20px;
+    font-size: 14px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.control-toggle button:hover {
+    background: #5a54a4;
+}
+
+/* Swipe Controls */
+.swipe-controls {
+    width: 240px;
+    height: 240px;
+    margin: 0 auto;
+    position: relative;
+}
+
+.swipe-area {
+    width: 100%;
+    height: 100%;
+    background: rgba(102, 126, 234, 0.1);
+    border: 2px dashed #667eea;
+    border-radius: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    touch-action: none;
+}
+
+.swipe-indicator {
+    text-align: center;
+    color: #667eea;
+    font-size: 14px;
+}
+
+.swipe-arrow {
+    font-size: 24px;
+    margin-bottom: 10px;
+    animation: bounce 1s infinite;
+}
+
+@keyframes bounce {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-10px); }
+}
+
+/* Swipe Direction Indicator */
+.swipe-direction {
+    position: absolute;
+    background: rgba(102, 126, 234, 0.2);
+    border-radius: 10px;
+    pointer-events: none;
+    transition: opacity 0.3s ease;
+}
+
+.swipe-direction.active {
+    background: rgba(102, 126, 234, 0.4);
 }
 
 @keyframes fadeUp {
